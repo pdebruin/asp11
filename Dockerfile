@@ -1,15 +1,17 @@
-# https://github.com/dotnet/dotnet-docker/blob/main/samples/aspnetapp/Dockerfile.alpine-x64
-FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0 AS build
+ARG TARGETARCH
 WORKDIR /source
 
-COPY web/*.csproj .
-RUN dotnet restore -r linux-musl-x64
+COPY --link web/*.csproj .
+RUN dotnet restore -a $TARGETARCH
 
-COPY web/. .
-RUN dotnet publish -c Release -o /app -r linux-musl-x64 --self-contained false --no-restore
+COPY --link web/. .
+RUN dotnet publish -a $TARGETARCH --no-restore -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:11.0-alpine-amd64
+
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
+EXPOSE 8080
 WORKDIR /app
-COPY --from=build /app .
-
+COPY --link --from=build /app .
+USER $APP_UID
 ENTRYPOINT ["./web"]

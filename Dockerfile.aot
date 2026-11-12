@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/dotnet/sdk:11.0-resolute-aot AS build
+WORKDIR /source
+
+COPY --link web/. .
+RUN dotnet publish -o /app -p:PublishAot=true -p:InvariantGlobalization=true \
+    && rm /app/*.dbg /app/*.Development.json
+
+
+FROM mcr.microsoft.com/dotnet/runtime-deps:11.0-resolute-chiseled
+WORKDIR /app
+COPY --link --from=build /app .
+USER $APP_UID
+ENTRYPOINT ["./web"]
